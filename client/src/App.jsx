@@ -11,15 +11,21 @@ import RemoveBackground from './pages/RemoveBackground'
 import RemoveObject from './pages/RemoveObject'
 import ReviewResume from './pages/ReviewResume'
 import { useAuth } from '@clerk/clerk-react'
+import {Toaster} from 'react-hot-toast'
 
 const App = () => {
 
-  const {getToken}=useAuth()
-  useEffect(()=>{
-    getToken().then((token)=>console.log(token))
-  },[])
+   //to display token in console so that we can use it in postman, each token last for only 1 min
+
+  // const {getToken}=useAuth()
+  // useEffect(()=>{
+  //   getToken().then((token)=>console.log(token))
+  // },[])
+
   return (
     <div>
+      {/* for tost notificationn */}
+      <Toaster/>
       <Routes>
         <Route path='/' element={<Home/>} />
         <Route path='/ai' element={<Layout/>}>
