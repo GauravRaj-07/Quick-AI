@@ -128,7 +128,7 @@ export const generateImage=async (req,res)=>{
 
         
 
-        res.json({success:true,secure_url})
+        res.json({success:true,content:secure_url})
 
     }catch(error){
         console.log(error.message)
@@ -140,7 +140,7 @@ export const generateImage=async (req,res)=>{
 export const removeImageBackground=async (req,res)=>{
     try{
         const {userId}=req.auth();
-        const {image}=req.file;
+        const image=req.file;
         const plan=req.plan;
 
         if(plan !=='premium'){
@@ -163,7 +163,7 @@ export const removeImageBackground=async (req,res)=>{
 
         
 
-        res.json({success:true,secure_url})
+        res.json({success:true,content:secure_url})
 
     }catch(error){
         console.log(error.message)
@@ -176,7 +176,7 @@ export const removeImageObject=async (req,res)=>{
     try{
         const {userId}=req.auth();
         const {object}=req.body;
-        const {image}=req.file;
+        const image=req.file;
         const plan=req.plan;
 
         if(plan !=='premium'){
@@ -196,7 +196,7 @@ export const removeImageObject=async (req,res)=>{
 
         
 
-        res.json({success:true,imageUrl})
+        res.json({success:true,content:imageUrl})
 
     }catch(error){
         console.log(error.message)
@@ -239,7 +239,7 @@ export const resumeReview=async (req,res)=>{
         const content=response.choices[0].message.content
 
         await sql`INSERT INTO creations (user_id, prompt, content, type)
-        VALUES (${userId}, Review the uploaded resume, ${content},'resume-review')`
+        VALUES (${userId}, 'Review the uploaded resume', ${content},'resume-review')`
         
 
         res.json({success:true,content})
