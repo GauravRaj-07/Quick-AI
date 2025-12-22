@@ -15,12 +15,12 @@ import {Toaster} from 'react-hot-toast'
 
 const App = () => {
 
-   //to display token in console so that we can use it in postman, each token last for only 1 min
+  //  to display token in console so that we can use it in postman, each token last for only 1 min
 
-  // const {getToken}=useAuth()
-  // useEffect(()=>{
-  //   getToken().then((token)=>console.log(token))
-  // },[])
+  const {getToken}=useAuth()
+  useEffect(()=>{
+    getToken().then((token)=>console.log(token))
+  },[])
 
   return (
     <div>
