@@ -1,5 +1,5 @@
 
-import OpenAI from "openai";
+import { GoogleGenAI } from "@google/genai";
 import sql from "../config/db.js";
 import { clerkClient } from "@clerk/express";
 import axios from "axios";
@@ -7,10 +7,35 @@ import {v2 as cloudinary} from 'cloudinary'
 import fs from 'fs'
 import pdf from 'pdf-parse/lib/pdf-parse.js'
 
-const AI = new OpenAI({
-    apiKey: process.env.GEMINI_API_KEY,
-    baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/"
+const AI = new GoogleGenAI({
+    apiKey: process.env.GEMINI_API_KEY
 });
+
+
+const handleError = (res, error, source = "Gemini API") => {
+    let status = 500;
+    let message = "Internal server error";
+
+    // Gemini rate-limit detection
+    if (
+        error?.message?.includes("429") ||
+        error?.message?.toLowerCase().includes("rate") ||
+        error?.message?.toLowerCase().includes("quota")
+    ) {
+        status = 429;
+        message = `${source} quota exceeded. Please try again later.`;
+    }
+
+    console.error("----- ERROR SOURCE:", source);
+    console.error("STATUS:", status);
+    console.error("RAW MESSAGE:", error.message);
+
+    return res.status(status).json({
+        success: false,
+        message
+    });
+};
+
 
 export const generateArticle=async (req,res)=>{
     try{
@@ -23,19 +48,23 @@ export const generateArticle=async (req,res)=>{
             return res.json({success:false,message:"Limit reached. Upgrade to continue."})
         }
 
-        const response = await AI.chat.completions.create({
-            model: "gemini-2.0-flash",
-            messages: [
+        const response = await AI.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: [
                 {
                     role: "user",
-                    content: prompt,
-                },
+                    parts: [{ text: prompt }]
+                }
             ],
-            temperature:0.7,
-            max_tokens:length,
+            generationConfig: {
+                temperature: 0.7,
+                maxOutputTokens: length
+            }
         });
-
-        const content=response.choices[0].message.content
+        
+        const content = response.text;
+        
+        
 
         await sql`INSERT INTO creations (user_id, prompt, content, type)
         VALUES (${userId}, ${prompt}, ${content},'article')`
@@ -51,8 +80,9 @@ export const generateArticle=async (req,res)=>{
         res.json({success:true,content})
 
     }catch(error){
-        console.log(error.message)
-        res.json({success:false, message:error.message})
+        // console.log(error.message)
+        // res.json({success:false, message:error.message})
+        handleError(res, error, "Gemini API");
     }
 }
 
@@ -67,19 +97,21 @@ export const generateBlogTitle=async (req,res)=>{
             return res.json({success:false,message:"Limit reached. Upgrade to continue."})
         }
 
-        const response = await AI.chat.completions.create({
-            model: "gemini-2.0-flash",
-            messages: [
+        const response = await AI.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: [
                 {
                     role: "user",
-                    content: prompt,
-                },
+                    parts: [{ text: prompt }]
+                }
             ],
-            temperature:0.7,
-            max_tokens:100,
+            generationConfig: {
+                temperature: 0.7,
+                maxOutputTokens: 100
+            }
         });
-
-        const content=response.choices[0].message.content
+        
+        const content = response.text;
 
         await sql`INSERT INTO creations (user_id, prompt, content, type)
         VALUES (${userId}, ${prompt}, ${content},'blog-title')`
@@ -224,19 +256,21 @@ export const resumeReview=async (req,res)=>{
 
         const prompt=`Review the following resume and provide constructive feedback on its strengths, and weaknesses, and areas for improvement. Resume Content:\n\n${pdfData.text}`
 
-        const response = await AI.chat.completions.create({
-            model: "gemini-2.0-flash",
-            messages: [
+        const response = await AI.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: [
                 {
                     role: "user",
-                    content: prompt,
-                },
+                    parts: [{ text: prompt }]
+                }
             ],
-            temperature:0.7,
-            max_tokens:1000,
+            generationConfig: {
+                temperature: 0.7,
+                maxOutputTokens: 1000
+            }
         });
-
-        const content=response.choices[0].message.content
+        
+        const content = response.text;
 
         await sql`INSERT INTO creations (user_id, prompt, content, type)
         VALUES (${userId}, 'Review the uploaded resume', ${content},'resume-review')`
